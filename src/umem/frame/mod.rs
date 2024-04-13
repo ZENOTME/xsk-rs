@@ -85,6 +85,12 @@ impl FrameDesc {
         &self.lengths
     }
 
+    /// Reset all contents of the frame descriptor.
+    pub fn reset(&mut self) {
+        self.lengths.data = 0;
+        self.lengths.headroom = 0;
+    }
+
     /// Frame options.
     #[inline]
     pub fn options(&self) -> u32 {
