@@ -122,6 +122,9 @@ cfg_if! {
         pub mod umem;
         pub use umem::{frame::FrameDesc, CompQueue, FillQueue, Umem};
 
+        mod xdp_prog;
+        pub use xdp_prog::regsiter_xdp_program;
+
         pub mod socket;
         pub use socket::{RxQueue, Socket, TxQueue};
 

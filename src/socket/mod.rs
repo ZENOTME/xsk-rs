@@ -19,9 +19,10 @@ use std::{
 };
 
 use crate::{
-    config::{Interface, SocketConfig},
+    config::{Interface, LibxdpFlags, SocketConfig},
     ring::{XskRingCons, XskRingProd},
     umem::{CompQueue, FillQueue, Umem},
+    xdp_prog::update_map_in_xdp_program,
 };
 
 /// Wrapper around a pointer to some AF_XDP socket.
@@ -159,6 +160,17 @@ impl Socket {
                 });
             }
         };
+
+        if config
+            .libxdp_flags()
+            .contains(LibxdpFlags::XSK_LIBXDP_FLAGS_INHIBIT_PROG_LOAD)
+        {
+            update_map_in_xdp_program(if_name.as_cstr().to_str().unwrap(), socket_ptr.0.as_ptr())
+                .map_err(|err| SocketCreateError {
+                reason: "failed to update map in xdp program",
+                err,
+            })?;
+        }
 
         let fd = unsafe { libxdp_sys::xsk_socket__fd(socket_ptr.0.as_ref()) };
 
