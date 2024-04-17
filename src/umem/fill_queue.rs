@@ -23,6 +23,11 @@ impl FillQueue {
         Self { ring, _umem: umem }
     }
 
+    /// Returns the number of free spaces on the fill ring.
+    pub fn free_num(&mut self, expect_num: u32) -> u32 {
+        unsafe { libxdp_sys::xsk_prod_nb_free(self.ring.as_mut(), expect_num) }
+    }
+
     /// Let the kernel know that the [`Umem`] frames described by
     /// `descs` may be used to receive data. Returns the number of
     /// frames submitted to the kernel.

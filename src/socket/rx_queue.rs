@@ -19,6 +19,11 @@ impl RxQueue {
         Self { ring, socket }
     }
 
+    /// Returns the number of available frames in the queue.
+    pub fn avail_num(&mut self, expect_num: u32) -> u32 {
+        unsafe { libxdp_sys::xsk_cons_nb_avail(self.ring.as_mut(), expect_num) }
+    }
+
     /// Update `descs` with information on which [`Umem`] frames have
     /// received packets. Returns the number of elements of `descs`
     /// which have been updated.
