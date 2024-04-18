@@ -198,8 +198,13 @@ impl Umem {
     }
 
     /// Adjust the address of the frame descriptor to point to the headroom.
-    pub fn adjust_addr_ahead(&self, desc: &mut FrameDesc, offset: usize) {
-        self.mem.adjust_addr_ahead(desc, offset);
+    /// if offset < 0, move the address ahead, otherwise move the address behind.
+    pub fn adjust_addr(&self, desc: &mut FrameDesc, offset: i32) {
+        if offset > 0 {
+            self.mem.adjust_addr_behind(desc, offset as usize);
+        } else {
+            self.mem.adjust_addr_ahead(desc, -offset as usize);
+        }
     }
 
     /// Reset

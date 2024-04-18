@@ -57,29 +57,20 @@ fn hello_xdp(dev1: (VethDevConfig, PacketGenerator), dev2: (VethDevConfig, Packe
     // 2. Write to the UMEM.
     println!("before send at {}", dev1_descs[4].addr());
     let before_addr = dev1_descs[4].addr();
-    let payload: Vec<u8> = vec![
-        0x00, 0x01, 0x08, 0x00, 0x06, 0x04, 0x00, 0x01, 0xf6, 0xe0, 0xf6, 0xc9, 0x60, 0x0a, 0xc0,
-        0xa8, 0x45, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0xa8, 0x45, 0xfe,
-    ];
     unsafe {
         // write payload
         umem.data_mut(&mut dev1_descs[4])
             .cursor()
-            .write_all(&payload)
+            .write_all(&ETHERNET_PACKET)
+            .expect("failed writing packet to frame");
+        umem.data_mut(&mut dev1_descs[4])
+            .cursor()
+            .write_all(&ETHERNET_PACKET)
             .expect("failed writing packet to frame")
     }
-    umem.adjust_addr(&mut dev1_descs[4], -14);
-    let mut data = unsafe { umem.data_mut(&mut dev1_descs[4]) };
-    let mut pkt = Packet::new(data.as_mut()).unwrap();
-    pkt.set_destination("ff:ff:ff:ff:ff:ff".parse().unwrap())
-        .unwrap()
-        .set_source("f6:e0:f6:c9:60:0a".parse().unwrap())
-        .unwrap()
-        .set_protocol(0x0806.try_into().unwrap())
-        .unwrap();
-    println!("after send at {}", dev1_descs[4].addr());
+    umem.adjust_addr(&mut dev1_descs[4], ETHERNET_PACKET.len() as i32);
     let after_addr = dev1_descs[4].addr();
-    assert!(before_addr == after_addr + 14);
+    assert!(before_addr == after_addr - ETHERNET_PACKET.len());
     assert!(dev1_descs[4].lengths().data() == ETHERNET_PACKET.len());
     assert!(unsafe { umem.data(&dev1_descs[4]).contents() } == ETHERNET_PACKET);
 

@@ -88,6 +88,15 @@ impl UmemRegion {
         desc.lengths.data += offset;
     }
 
+    /// Adjust the address of the frame descriptor to point to the data.
+    #[inline]
+    pub fn adjust_addr_behind(&self, desc: &mut FrameDesc, offset: usize) {
+        let addr_base = desc.addr & !(self.layout.frame_size() - 1);
+        assert!(desc.addr + offset < addr_base + self.layout.frame_size());
+        desc.addr += offset;
+        desc.lengths.data -= offset;
+    }
+
     /// Default the frame descriptor to point to the data of the frame
     /// ---
     /// xdp headroom
