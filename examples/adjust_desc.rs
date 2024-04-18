@@ -55,21 +55,21 @@ fn hello_xdp(dev1: (VethDevConfig, PacketGenerator), dev2: (VethDevConfig, Packe
     }
 
     // 2. Write to the UMEM.
-    println!("before send at {}", dev1_descs[0].addr());
-    let before_addr = dev1_descs[0].addr();
+    println!("before send at {}", dev1_descs[4].addr());
+    let before_addr = dev1_descs[4].addr();
     let payload: Vec<u8> = vec![
         0x00, 0x01, 0x08, 0x00, 0x06, 0x04, 0x00, 0x01, 0xf6, 0xe0, 0xf6, 0xc9, 0x60, 0x0a, 0xc0,
         0xa8, 0x45, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0xa8, 0x45, 0xfe,
     ];
     unsafe {
         // write payload
-        umem.data_mut(&mut dev1_descs[0])
+        umem.data_mut(&mut dev1_descs[4])
             .cursor()
             .write_all(&payload)
             .expect("failed writing packet to frame")
     }
-    umem.adjust_addr_ahead(&mut dev1_descs[0], 14);
-    let mut data = unsafe { umem.data_mut(&mut dev1_descs[0]) };
+    umem.adjust_addr_ahead(&mut dev1_descs[4], 14);
+    let mut data = unsafe { umem.data_mut(&mut dev1_descs[4]) };
     let mut pkt = Packet::new(data.as_mut()).unwrap();
     pkt.set_destination("ff:ff:ff:ff:ff:ff".parse().unwrap())
         .unwrap()
@@ -77,17 +77,17 @@ fn hello_xdp(dev1: (VethDevConfig, PacketGenerator), dev2: (VethDevConfig, Packe
         .unwrap()
         .set_protocol(0x0806.try_into().unwrap())
         .unwrap();
-    println!("after send at {}", dev1_descs[0].addr());
-    let after_addr = dev1_descs[0].addr();
+    println!("after send at {}", dev1_descs[4].addr());
+    let after_addr = dev1_descs[4].addr();
     assert!(before_addr == after_addr + 14);
-    assert!(dev1_descs[0].lengths().data() == ETHERNET_PACKET.len());
-    assert!(unsafe { umem.data(&dev1_descs[0]).contents() } == ETHERNET_PACKET);
+    assert!(dev1_descs[4].lengths().data() == ETHERNET_PACKET.len());
+    assert!(unsafe { umem.data(&dev1_descs[4]).contents() } == ETHERNET_PACKET);
 
     // 3. Submit the frame to the kernel for transmission.
     println!("sending packet");
 
     unsafe {
-        dev1_tx_q.produce_and_wakeup(&dev1_descs[..1]).unwrap();
+        dev1_tx_q.produce_and_wakeup(&dev1_descs[4..5]).unwrap();
     }
 
     unsafe {

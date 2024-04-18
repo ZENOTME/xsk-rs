@@ -82,7 +82,8 @@ impl UmemRegion {
     /// Panics if the offset is greater than the headroom size.
     #[inline]
     pub fn adjust_addr_ahead(&self, desc: &mut FrameDesc, offset: usize) {
-        assert!(desc.addr - offset < self.layout.frame_headroom + self.layout.xdp_headroom);
+        let addr_base = desc.addr & !(self.layout.frame_size() - 1);
+        assert!(desc.addr - offset >= addr_base + self.layout.xdp_headroom);
         desc.addr -= offset;
         desc.lengths.data += offset;
     }
