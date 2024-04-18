@@ -28,6 +28,7 @@ rand = "0.8.5"
 rtnetlink = "0.14.0"
 serial_test = "2.0.0"
 structopt = "0.3.26"
+packet = "0.1.4"
 
 [dev-dependencies.tokio]
 version = "1.6"

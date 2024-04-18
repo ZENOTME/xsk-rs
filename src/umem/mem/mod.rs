@@ -78,6 +78,33 @@ impl UmemRegion {
         unsafe { self.as_ptr().add(addr) as *mut u8 }
     }
 
+    /// Adjust the address of the frame descriptor to point to the headroom.
+    /// Panics if the offset is greater than the headroom size.
+    #[inline]
+    pub fn adjust_addr_ahead(&self, desc: &mut FrameDesc, offset: usize) {
+        assert!(desc.addr - offset < self.layout.frame_headroom + self.layout.xdp_headroom);
+        desc.addr -= offset;
+        desc.lengths.data += offset;
+    }
+
+    /// Default the frame descriptor to point to the data of the frame
+    /// ---
+    /// xdp headroom
+    /// ---
+    /// headroom
+    /// --- <--- desc.addr
+    /// data
+    /// ---
+    /// But it is possible be adjusted to point to the headroom of the frame. This
+    /// function used to reset the desc.addr to the default position.
+    #[inline]
+    pub fn reset_desc(&self, desc: &mut FrameDesc) {
+        let addr_base = desc.addr & !(self.layout.frame_size() - 1);
+        desc.addr = addr_base + self.layout.frame_headroom + self.layout.xdp_headroom;
+        desc.lengths.data = 0;
+        desc.lengths.headroom = 0;
+    }
+
     /// A pointer to the headroom segment of the frame described to by
     /// `desc`.
     ///

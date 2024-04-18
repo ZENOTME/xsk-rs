@@ -70,8 +70,13 @@ pub fn regsiter_xdp_program(file_name: &str, section_name: &str, if_name: &str) 
     }
 
     // Create xdp program
-    let xdp_prog =
-        unsafe { libxdp_sys::xdp_program__open_file(file_name.as_c_str().as_ptr(), section_name, ptr::null_mut()) };
+    let xdp_prog = unsafe {
+        libxdp_sys::xdp_program__open_file(
+            file_name.as_c_str().as_ptr(),
+            section_name,
+            ptr::null_mut(),
+        )
+    };
     if xdp_prog.is_null() {
         return Err(io::Error::new(
             io::ErrorKind::Other,

@@ -13,12 +13,12 @@ use super::{frame::FrameDesc, Umem};
 #[derive(Debug)]
 pub struct CompQueue {
     ring: XskRingCons,
-    _umem: Umem,
+    umem: Umem,
 }
 
 impl CompQueue {
     pub(crate) fn new(ring: XskRingCons, umem: Umem) -> Self {
-        Self { ring, _umem: umem }
+        Self { ring, umem }
     }
 
     /// Update `descs` with details of frames whose contents have been
@@ -62,6 +62,8 @@ impl CompQueue {
                 desc.lengths.headroom = 0;
                 desc.options = 0;
 
+                self.umem.mem.reset_desc(desc);
+
                 idx += 1;
             }
 
@@ -91,6 +93,8 @@ impl CompQueue {
             desc.lengths.data = 0;
             desc.lengths.headroom = 0;
             desc.options = 0;
+
+            self.umem.mem.reset_desc(desc);
 
             unsafe { libxdp_sys::xsk_ring_cons__release(self.ring.as_mut(), cnt) };
         }

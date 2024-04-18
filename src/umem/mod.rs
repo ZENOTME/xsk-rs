@@ -197,6 +197,16 @@ impl Umem {
         Ok((umem, frame_descs))
     }
 
+    /// Adjust the address of the frame descriptor to point to the headroom.
+    pub fn adjust_addr_ahead(&self, desc: &mut FrameDesc, offset: usize) {
+        self.mem.adjust_addr_ahead(desc, offset);
+    }
+
+    /// Reset
+    pub fn reset_desc(&self, desc: &mut FrameDesc) {
+        self.mem.reset_desc(desc);
+    }
+
     /// The headroom and packet data segments of the `Umem` frame
     /// pointed at by `desc`. Contents are read-only.
     ///
