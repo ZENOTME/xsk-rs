@@ -102,6 +102,79 @@ pub struct Umem {
 }
 
 impl Umem {
+    /// Create a new `Umem` instance backed by an existing UMEM region.
+    /// It's a trick used to share same memory region between multiple sockets but 
+    /// avoid the kernel support.
+    /// 
+    /// # NOTE
+    /// Use the same config as the original UMEM.
+    pub unsafe fn new_from_umem(
+        config: UmemConfig,
+        other: Umem,
+    ) -> Result<Self, UmemCreateError> {
+        let mem = other.mem.clone();
+
+        let mut umem_ptr = ptr::null_mut();
+        let mut fq: Box<XskRingProd> = Box::default();
+        let mut cq: Box<XskRingCons> = Box::default();
+
+        let err = unsafe {
+            libxdp_sys::xsk_umem__create(
+                &mut umem_ptr,
+                mem.as_ptr(),
+                mem.len() as u64,
+                fq.as_mut().as_mut(), // double deref due to to Box
+                cq.as_mut().as_mut(),
+                &config.into(),
+            )
+        };
+
+        if err != 0 {
+            return Err(UmemCreateError {
+                reason: "non-zero error code returned when creating UMEM",
+                err: io::Error::from_raw_os_error(-err),
+            });
+        }
+
+        let umem_ptr = match NonNull::new(umem_ptr) {
+            Some(umem_ptr) => {
+                // SAFETY: this is the only `XskUmem` instance for
+                // this pointer, and no other pointers to the UMEM
+                // exist.
+                unsafe { XskUmem::new(umem_ptr) }
+            }
+            None => {
+                return Err(UmemCreateError {
+                    reason: "UMEM is null",
+                    err: io::Error::from_raw_os_error(-err),
+                });
+            }
+        };
+
+        if fq.is_ring_null() {
+            return Err(UmemCreateError {
+                reason: "fill queue ring is null",
+                err: io::Error::from_raw_os_error(-err),
+            });
+        };
+
+        if cq.is_ring_null() {
+            return Err(UmemCreateError {
+                reason: "comp queue ring is null",
+                err: io::Error::from_raw_os_error(-err),
+            });
+        }
+
+        let inner = UmemInner::new(umem_ptr, Some((fq, cq)));
+
+        let umem = Umem {
+            inner: Arc::new(Mutex::new(inner)),
+            mem,
+        };
+
+        Ok(umem)
+    }
+
     /// Create a new `Umem` instance backed by an anonymous memory
     /// mapped region.
     ///
